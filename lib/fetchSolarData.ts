@@ -1,24 +1,19 @@
 // lib/fetchSolarData.ts
 
 export async function fetchSolarData(address: string) {
-  // 1. Geocode using Nominatim (OpenStreetMap)
-  const geoRes = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`,
-    {
-      headers: {
-        "User-Agent": "solar-analyzer-app/1.0 (contact@example.com)"
-      }
-    }
-  );
+const geoRes = await fetch(
+  `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(address)}&key=${process.env.OPENCAGE_KEY}`
+);
 
-  const geo = await geoRes.json();
+const geo = await geoRes.json();
 
-  if (!geo || geo.length === 0) {
-    throw new Error("Could not geocode address");
-  }
+if (!geo.results || geo.results.length === 0) {
+  throw new Error("Could not geocode address");
+}
 
-  const latitude = Number(geo[0].lat);
-  const longitude = Number(geo[0].lon);
+const latitude = geo.results[0].geometry.lat;
+const longitude = geo.results[0].geometry.lng;
+
 
   // 2. Fetch irradiance, temperature, cloud cover
   const weatherRes = await fetch(
