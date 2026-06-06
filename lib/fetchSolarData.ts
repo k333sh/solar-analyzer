@@ -1,15 +1,16 @@
 export async function fetchSolarData(address: string) {
-  // 1. Geocode the address → get latitude + longitude
-  const geoRes = await fetch(
-    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(address)}`
-  );
-  const geo = await geoRes.json();
+  // 1. Geocode the address using Nominatim (OpenStreetMap)
+const geoRes = await fetch(
+  `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+);
+const geo = await geoRes.json();
 
-  if (!geo.results || geo.results.length === 0) {
-    throw new Error("Could not geocode address");
-  }
+if (!geo || geo.length === 0) {
+  throw new Error("Could not geocode address");
+}
 
-  const { latitude, longitude } = geo.results[0];
+const latitude = Number(geo[0].lat);
+const longitude = Number(geo[0].lon);
 
   // 2. Fetch irradiance, temperature, cloud cover
   const weatherRes = await fetch(
