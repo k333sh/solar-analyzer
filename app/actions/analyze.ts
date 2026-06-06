@@ -1,62 +1,55 @@
 "use server";
 
+import { createClient } from "@supabase/supabase-js";
 import { runSolarEngine } from "@/lib/solarEngine";
-import { saveResult } from "@/lib/resultStore";
-import { geocode } from "@/lib/api/geocode";
-import { fetchWeather } from "@/lib/api/weather";
-import { fetchAQI } from "@/lib/api/aqi";
-import { fetchIrradiance } from "@/lib/api/irradiance";
-import { fetchCloudCover } from "@/lib/api/cloud";
-import { fetchShadeFactor } from "@/lib/api/shade";
+import { fetchSolarData } from "@/lib/fetchSolarData";
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function analyzeAndStore(formData: FormData) {
-  const address = String(formData.get("address") || "");
-  const roof_area = formData.get("roof_area");
-  const roof_angle = formData.get("roof_angle");
-  const monthly_bill = formData.get("monthly_bill");
+  const address = formData.get("address") as string;
+  const roof_angle = Number(formData.get("roof_angle"));
+  const roof_area = formData.get("roof_area")
+    ? Number(formData.get("roof_area"))
+    : null;
+  const monthly_bill = Number(formData.get("monthly_bill"));
 
-  if (!address || !roof_angle || !monthly_bill) {
-    throw new Error("Missing required fields");
-  }
+  // Fetch environmental + location data
+  const env = await fetchSolarData(address);
 
-  // 1. GEOLOCATION
-  const { lat, lon } = await geocode(address);
-
-  // 2. WEATHER
-  const weather = await fetchWeather(lat, lon);
-
-  // 3. AIR QUALITY
-  const aqi = await fetchAQI(lat, lon);
-
-  // 4. IRRADIANCE
-  const irradiance = await fetchIrradiance(lat, lon);
-
-  // 5. CLOUD COVER
-  const cloud_cover = await fetchCloudCover(lat, lon);
-
-  // 6. SHADING
-  const shade_factor = await fetchShadeFactor(lat, lon);
-
-  // 7. BUILD INPUTS FOR ENGINE
-  const inputs = {
+  // Run the full engine with ALL required fields
+  const result = runSolarEngine({
     address,
-    roof_area: roof_area ? Number(roof_area) : null,
-    roof_angle: Number(roof_angle),
-    roof_azimuth: "S", // TODO: detect from roof geometry
-    monthly_bill: Number(monthly_bill),
+    roof_area,
+    roof_angle,
+    roof_azimuth: env.roof_azimuth,
+    monthly_bill,
+    irradiance: env.irradiance,
+    temperature: env.temperature,
+    aqi: env.aqi,
+    cloud_cover: env.cloud_cover,
+    shade_factor: env.shade_factor,
+    latitude: env.latitude,
+    electricity_rate: env.electricity_rate,
+  });
 
-    irradiance,
-    temperature: weather.temperature,
-    aqi,
-    cloud_cover,
-    shade_factor,
-    latitude: lat,
-    electricity_rate: weather.electricity_rate ?? 0.12
-  };
+  // Store in Supabase
+  const { data, error } = await supabase
+    .from("analyses")
+    .insert({
+      address,
+      roof_angle,
+      roof_area,
+      monthly_bill,
+      result,
+    })
+    .select("id")
+    .single();
 
-  const result = runSolarEngine(inputs);
-  const id = saveResult(result);
+  if (error) throw error;
 
-  return id;
+  return data.id;
 }
