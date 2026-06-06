@@ -1,7 +1,7 @@
 export async function fetchSolarData(address: string) {
   // 1. Geocode using Nominatim (correct headers)
   const geoRes = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`,
+    `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&countrycodes=ca,us&q=YOUR_ADDRESS`,
     {
       method: "GET",
       headers: {
