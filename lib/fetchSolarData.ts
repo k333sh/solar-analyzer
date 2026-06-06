@@ -1,51 +1,61 @@
-// lib/fetchSolarData.ts
-
 export async function fetchSolarData(address: string) {
-const geoRes = await fetch(
-  `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(address)}&key=${process.env.OPENCAGE_KEY}`
-);
-
-const geo = await geoRes.json();
-
-if (!geo.results || geo.results.length === 0) {
-  throw new Error("Could not geocode address");
-}
-
-const latitude = geo.results[0].geometry.lat;
-const longitude = geo.results[0].geometry.lng;
-
-
-  // 2. Fetch irradiance, temperature, cloud cover
-  const weatherRes = await fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=direct_radiation,temperature_2m,cloudcover`
+  // 1. Geocode using Nominatim (correct headers)
+  const geoRes = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`,
+    {
+      method: "GET",
+      headers: {
+        "User-Agent": "SolarAnalyzer/1.0 (oyewusiiteoluwa@gmail.com)",
+        "Referer": "https://solar-analyzer.vercel.app",
+      },
+      cache: "no-store",
+    }
   );
 
+  // Nominatim sometimes returns HTML on rate-limit → detect it
+  const text = await geoRes.text();
+
+  // If response starts with "<" it's HTML → Access Denied
+  if (text.trim().startsWith("<")) {
+    throw new Error("Nominatim blocked the request (rate limit or missing headers)");
+  }
+
+  const geo = JSON.parse(text);
+
+  if (!geo || geo.length === 0) {
+    throw new Error("Could not geocode address");
+  }
+
+  const latitude = Number(geo[0].lat);
+  const longitude = Number(geo[0].lon);
+
+  // 2. Weather + irradiance
+  const weatherRes = await fetch(
+    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=direct_radiation,temperature_2m,cloudcover`,
+    { cache: "no-store" }
+  );
   const weather = await weatherRes.json();
 
-  const irradiance = weather?.hourly?.direct_radiation?.[0] ?? 1200;
-  const temperature = weather?.hourly?.temperature_2m?.[0] ?? 15;
+  const irradiance = weather?.hourly?.direct_radiation?.[0] ?? 1400;
+  const temperature = weather?.hourly?.temperature_2m?.[0] ?? 10;
   const cloud_cover_raw = weather?.hourly?.cloudcover?.[0] ?? 40;
-
-  // Convert 0–100 → 0–1
   const cloud_cover = cloud_cover_raw / 100;
 
-  // 3. Fetch AQI
+  // 3. AQI
   const aqiRes = await fetch(
-    `https://api.openaq.org/v2/latest?coordinates=${latitude},${longitude}`
+    `https://api.openaq.org/v2/latest?coordinates=${latitude},${longitude}`,
+    { cache: "no-store" }
   );
-
   const aqiJson = await aqiRes.json();
 
   const aqi =
-    aqiJson?.results?.[0]?.measurements?.[0]?.value ?? 50;
+    aqiJson?.results?.[0]?.measurements?.[0]?.value ?? 40;
 
-  // 4. Shade factor (simple model)
+  // 4. Shade factor
   const shade_factor = Math.max(0.2, 1 - cloud_cover);
 
-  // 5. Default roof azimuth (south-facing)
+  // 5. Defaults
   const roof_azimuth = "S";
-
-  // 6. Electricity rate (CAD/kWh)
   const electricity_rate = 0.12;
 
   return {
