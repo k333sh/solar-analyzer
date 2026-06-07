@@ -2,23 +2,13 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { runSolarEngine } from "@/lib/solarEngine";
-import { fetchSolarData, SolarEnvSuccess } from "@/src/lib/fetchSolarData";
+import { fetchSolarData } from "@/src/lib/fetchSolarData";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// -------------------------------
-// TYPE GUARD
-// -------------------------------
-function isEnvSuccess(env: any): env is SolarEnvSuccess {
-  return env && !env.error;
-}
-
-// -------------------------------
-// SERVER ACTION
-// -------------------------------
 export async function analyzeAndStore(formData: FormData) {
   try {
     console.log("SERVER ACTION STARTED");
@@ -35,12 +25,6 @@ export async function analyzeAndStore(formData: FormData) {
     // Fetch environmental + location data
     const env = await fetchSolarData(address);
     console.log("FETCHED ENV DATA:", env);
-
-    // ⭐ NEW: Handle geocoding/weather/AQI errors
-    if (!isEnvSuccess(env)) {
-      console.error("ENVIRONMENT DATA ERROR:", env.error);
-      return { error: env.error };
-    }
 
     // Run the full engine with ALL required fields
     const result = runSolarEngine({
@@ -71,15 +55,15 @@ export async function analyzeAndStore(formData: FormData) {
 
     if (error) {
       console.error("SUPABASE INSERT ERROR:", error);
-      return { error: "Database insert failed." };
+      throw error;
     }
 
     console.log("INSERTED ROW WITH ID:", data.id);
 
-    return { id: data.id };
+    return data.id;
 
   } catch (err) {
     console.error("SERVER ACTION ERROR:", err);
-    return { error: "Unexpected server error." };
+    throw err;
   }
 }
