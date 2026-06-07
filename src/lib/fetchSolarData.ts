@@ -1,66 +1,35 @@
 export async function fetchSolarData(address: string) {
-  // -------------------------------
-  // 1. GEOCODING (with fallback)
-  // -------------------------------
-
-  let latitude: number | null = null;
-  let longitude: number | null = null;
-
-  // Try Nominatim first
-  try {
-    const geoRes = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(address)}`,
-      {
-        method: "GET",
-        headers: {
-          "User-Agent": "SolarAnalyzer/1.0 (oyewusiiteoluwa@gmail.com)",
-          "Referer": "https://solar-analyzer.vercel.app",
-        },
-        cache: "no-store",
-      }
-    );
-
-    const text = await geoRes.text();
-
-    // Detect HTML (rate limit)
-    if (!text.trim().startsWith("<")) {
-      const geo = JSON.parse(text);
-      if (geo && geo.length > 0) {
-        latitude = Number(geo[0].lat);
-        longitude = Number(geo[0].lon);
-      }
+  // 1. Geocode using Nominatim (correct headers)
+  const geoRes = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(address)}`,
+    {
+      method: "GET",
+      headers: {
+        "User-Agent": "SolarAnalyzer/1.0 (oyewusiiteoluwa@gmail.com)",
+        "Referer": "https://solar-analyzer.vercel.app",
+      },
+      cache: "no-store",
     }
-  } catch (err) {
-    console.warn("Nominatim failed:", err);
+  );
+
+  // Nominatim sometimes returns HTML on rate-limit → detect it
+  const text = await geoRes.text();
+
+  // If response starts with "<" it's HTML → Access Denied
+  if (text.trim().startsWith("<")) {
+    throw new Error("Nominatim blocked the request (rate limit or missing headers)");
   }
 
-  // Fallback: Open-Meteo geocoder
-  if (latitude === null || longitude === null) {
-    try {
-      const geo2 = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(address)}&count=1`,
-        { cache: "no-store" }
-      ).then((r) => r.json());
+  const geo = JSON.parse(text);
 
-      if (geo2?.results?.length > 0) {
-        latitude = geo2.results[0].latitude;
-        longitude = geo2.results[0].longitude;
-      }
-    } catch (err) {
-      console.warn("Open-Meteo geocoder failed:", err);
-    }
+  if (!geo || geo.length === 0) {
+    throw new Error("Could not geocode address");
   }
 
-  // FINAL FALLBACK — NEVER BREAK
-  if (latitude === null || longitude === null) {
-    console.warn("Using fallback coordinates");
-    latitude = 40.7128;   // New York fallback
-    longitude = -74.0060;
-  }
+  const latitude = Number(geo[0].lat);
+  const longitude = Number(geo[0].lon);
 
-  // -------------------------------
-  // 2. WEATHER + IRRADIANCE
-  // -------------------------------
+  // 2. Weather + irradiance
   const weatherRes = await fetch(
     `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=direct_radiation,temperature_2m,cloudcover`,
     { cache: "no-store" }
@@ -72,9 +41,7 @@ export async function fetchSolarData(address: string) {
   const cloud_cover_raw = weather?.hourly?.cloudcover?.[0] ?? 40;
   const cloud_cover = cloud_cover_raw / 100;
 
-  // -------------------------------
   // 3. AQI
-  // -------------------------------
   const aqiRes = await fetch(
     `https://api.openaq.org/v2/latest?coordinates=${latitude},${longitude}`,
     { cache: "no-store" }
@@ -84,14 +51,13 @@ export async function fetchSolarData(address: string) {
   const aqi =
     aqiJson?.results?.[0]?.measurements?.[0]?.value ?? 40;
 
-  // -------------------------------
-  // 4. SHADE FACTOR
-  // -------------------------------
+  // 4. Shade factor
   const shade_factor = Math.max(0.2, 1 - cloud_cover);
 
-  // -------------------------------
-  // 5. RETURN FINAL DATA
-  // -------------------------------
+  // 5. Defaults
+  const roof_azimuth = "S";
+  const electricity_rate = 0.12;
+
   return {
     latitude,
     irradiance,
@@ -99,7 +65,7 @@ export async function fetchSolarData(address: string) {
     aqi,
     cloud_cover,
     shade_factor,
-    roof_azimuth: "S",
-    electricity_rate: 0.12,
+    roof_azimuth,
+    electricity_rate,
   };
 }
