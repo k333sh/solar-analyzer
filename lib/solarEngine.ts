@@ -29,7 +29,7 @@ export type SolarResult = {
 };
 
 // ----------------------------
-// EFFICIENCY ENGINE
+// EFFICIENCY ENGINE (patched)
 // ----------------------------
 
 function computeEfficiency(inputs: SolarInputs) {
@@ -43,25 +43,31 @@ function computeEfficiency(inputs: SolarInputs) {
     latitude
   } = inputs;
 
-  const temp_loss = 1 - Math.max(0, (temperature - 25) * 0.004);
-  const aqi_loss = 1 - (aqi / 500) * 0.25;
-  const cloud_loss = 1 - cloud_cover * 0.75;
+  const temp_loss = 1 - Math.max(0, (temperature - 25) * 0.003);
+
+  const aqi_loss = 1 - (aqi / 500) * 0.15;
+
+  // Cloud loss softened
+  const cloud_loss = 1 - cloud_cover * 0.40;
 
   const orientation_map: Record<string, number> = {
     "S": 1.0,
-    "SE": 0.95,
-    "SW": 0.95,
-    "E": 0.90,
-    "W": 0.90,
-    "NE": 0.75,
-    "NW": 0.75,
-    "N": 0.60
+    "SE": 0.97,
+    "SW": 0.97,
+    "E": 0.92,
+    "W": 0.92,
+    "NE": 0.80,
+    "NW": 0.80,
+    "N": 0.70
   };
-  const orientation_loss = orientation_map[roof_azimuth] ?? 0.85;
+  const orientation_loss = orientation_map[roof_azimuth] ?? 0.90;
 
-  const tilt_loss = 1 - Math.abs(roof_angle - latitude) * 0.01;
-  const shade_loss = shade_factor;
-  const system_loss = 0.86;
+  const tilt_loss = 1 - Math.abs(roof_angle - latitude) * 0.005;
+
+  // Shade softened
+  const shade_loss = 0.5 + (shade_factor * 0.5);
+
+  const system_loss = 0.90;
 
   let final_efficiency =
     temp_loss *
@@ -73,7 +79,8 @@ function computeEfficiency(inputs: SolarInputs) {
     system_loss;
 
   // Minimum realistic efficiency
-  if (final_efficiency < 0.10) final_efficiency = 0.10;
+  if (final_efficiency < 0.15) final_efficiency = 0.15;
+  if (final_efficiency > 0.25) final_efficiency = 0.25;
 
   return {
     temp_loss,
@@ -104,9 +111,8 @@ function computeProduction(inputs: SolarInputs, eff: number) {
     annual_kwh = irradiance * roof_area * panel_efficiency * eff;
   }
 
-  // Minimum realistic annual production
-  if (!annual_kwh || annual_kwh < 1000) {
-    annual_kwh = 1000;
+  if (!annual_kwh || annual_kwh < 2000) {
+    annual_kwh = 2000;
   }
 
   return { annual_kwh };
@@ -139,7 +145,7 @@ function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
 }
 
 // ----------------------------
-// MASTER ENGINE
+// MASTER ENGINE (patched score)
 // ----------------------------
 
 export function runSolarEngine(inputs: SolarInputs): SolarResult {
@@ -147,9 +153,13 @@ export function runSolarEngine(inputs: SolarInputs): SolarResult {
   const production = computeProduction(inputs, efficiency.final_efficiency);
   const financial = computeFinancial(inputs, production.annual_kwh);
 
-  let score = efficiency.final_efficiency * 1.2;
-  if (score < 0.10) score = 0.10;
-  if (score > 1) score = 1;
+  const solar_quality = efficiency.final_efficiency; // 0.15–0.25
+  const financial_quality = Math.min(1, financial.annual_savings / 2000);
+
+  const score = Math.min(
+    1,
+    solar_quality * 0.7 + financial_quality * 0.3
+  );
 
   return {
     summary: {
