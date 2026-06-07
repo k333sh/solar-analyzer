@@ -18,6 +18,7 @@ export async function analyzeAndStore(formData: FormData) {
       : null;
     const monthly_bill = Number(formData.get("monthly_bill"));
 
+    // ALWAYS returns data now
     const env = await fetchSolarData(address);
 
     const result = runSolarEngine({
@@ -41,11 +42,15 @@ export async function analyzeAndStore(formData: FormData) {
       .select("id")
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("SUPABASE INSERT ERROR:", error);
+      return null;
+    }
 
     return data.id;
 
   } catch (err) {
-    throw err;
+    console.error("SERVER ACTION ERROR:", err);
+    return null;
   }
 }
