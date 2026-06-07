@@ -27,27 +27,35 @@ export default function HomePage() {
 
   // SUBMIT HANDLER (PATCHED)
   async function handleAnalyze(formData: FormData) {
-  startTransition(async () => {
-    const id = await analyzeAndStore(formData);
+    startTransition(async () => {
 
-    // ⭐ POLL SUPABASE UNTIL THE ROW EXISTS (bulletproof)
-    let attempts = 0;
-    let exists = false;
+      const result = await analyzeAndStore(formData);
 
-    while (attempts < 8 && !exists) {
-      const res = await fetch(`/api/check?id=${id}`);
-      const json = await res.json();
-      if (json.exists) {
-        exists = true;
-        break;
+      if (!result || typeof result !== "number") {
+        alert("Could not analyze this address. Try a different one.");
+        return;
       }
-      await new Promise((r) => setTimeout(r, 150));
-      attempts++;
-    }
 
-    router.push(`/results?id=${id}`);
-  });
-}
+      const id = result;
+
+      // ⭐ POLL SUPABASE UNTIL THE ROW EXISTS (bulletproof)
+      let attempts = 0;
+      let exists = false;
+
+      while (attempts < 8 && !exists) {
+        const res = await fetch(`/api/check?id=${id}`);
+        const json = await res.json();
+        if (json.exists) {
+          exists = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 150));
+        attempts++;
+      }
+
+      router.push(`/results?id=${id}`);
+    });
+  }
 
 
   return (
