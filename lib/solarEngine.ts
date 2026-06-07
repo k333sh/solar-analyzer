@@ -44,10 +44,9 @@ function computeEfficiency(inputs: SolarInputs) {
   } = inputs;
 
   const temp_loss = 1 - Math.max(0, (temperature - 25) * 0.003);
-
   const aqi_loss = 1 - (aqi / 500) * 0.15;
 
-  // Cloud loss softened
+  // Softer cloud loss
   const cloud_loss = 1 - cloud_cover * 0.40;
 
   const orientation_map: Record<string, number> = {
@@ -64,7 +63,7 @@ function computeEfficiency(inputs: SolarInputs) {
 
   const tilt_loss = 1 - Math.abs(roof_angle - latitude) * 0.005;
 
-  // Shade softened
+  // Softer shade loss
   const shade_loss = 0.5 + (shade_factor * 0.5);
 
   const system_loss = 0.90;
@@ -78,7 +77,7 @@ function computeEfficiency(inputs: SolarInputs) {
     shade_loss *
     system_loss;
 
-  // Minimum realistic efficiency
+  // Clamp to realistic range
   if (final_efficiency < 0.15) final_efficiency = 0.15;
   if (final_efficiency > 0.25) final_efficiency = 0.25;
 
@@ -123,9 +122,10 @@ function computeProduction(inputs: SolarInputs, eff: number) {
 // ----------------------------
 
 function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
-  const { electricity_rate } = inputs;
+  const { electricity_rate, monthly_bill } = inputs;
 
   const annual_savings = annual_kwh * electricity_rate;
+  const annual_bill = monthly_bill * 12;
 
   const system_size_kw = 6;
   const system_cost = system_size_kw * 2500;
@@ -136,8 +136,13 @@ function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
   if (!isFinite(payback_years) || payback_years > 50) payback_years = 50;
   if (!isFinite(roi) || roi < 0) roi = 0;
 
+  // NEW: offset ratio (how much of your bill solar can cover)
+  const offset_ratio = Math.min(1, annual_savings / annual_bill);
+
   return {
     annual_savings,
+    annual_bill,
+    offset_ratio,
     system_cost,
     payback_years,
     roi
@@ -145,7 +150,7 @@ function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
 }
 
 // ----------------------------
-// MASTER ENGINE (patched score)
+// MASTER ENGINE (70% sunlight, 30% financial)
 // ----------------------------
 
 export function runSolarEngine(inputs: SolarInputs): SolarResult {
@@ -154,7 +159,7 @@ export function runSolarEngine(inputs: SolarInputs): SolarResult {
   const financial = computeFinancial(inputs, production.annual_kwh);
 
   const solar_quality = efficiency.final_efficiency; // 0.15–0.25
-  const financial_quality = Math.min(1, financial.annual_savings / 2000);
+  const financial_quality = financial.offset_ratio;  // 0–1
 
   const score = Math.min(
     1,
