@@ -118,7 +118,7 @@ function computeProduction(inputs: SolarInputs, eff: number) {
 }
 
 // ----------------------------
-// FINANCIAL ENGINE
+// FINANCIAL ENGINE (patched)
 // ----------------------------
 
 function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
@@ -136,13 +136,14 @@ function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
   if (!isFinite(payback_years) || payback_years > 50) payback_years = 50;
   if (!isFinite(roi) || roi < 0) roi = 0;
 
-  // NEW: offset ratio (how much of your bill solar can cover)
-  const offset_ratio = Math.min(1, annual_savings / annual_bill);
+  // NEW: financial pressure (higher bill = higher incentive)
+  const financial_pressure = annual_bill / system_cost;
+  const financial_quality = Math.min(1, financial_pressure);
 
   return {
     annual_savings,
     annual_bill,
-    offset_ratio,
+    financial_quality,
     system_cost,
     payback_years,
     roi
@@ -159,7 +160,7 @@ export function runSolarEngine(inputs: SolarInputs): SolarResult {
   const financial = computeFinancial(inputs, production.annual_kwh);
 
   const solar_quality = efficiency.final_efficiency; // 0.15–0.25
-  const financial_quality = financial.offset_ratio;  // 0–1
+  const financial_quality = financial.financial_quality; // 0–1
 
   const score = Math.min(
     1,
