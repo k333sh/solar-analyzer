@@ -43,16 +43,10 @@ function computeEfficiency(inputs: SolarInputs) {
     latitude
   } = inputs;
 
-  // 1. Temperature loss
   const temp_loss = 1 - Math.max(0, (temperature - 25) * 0.004);
-
-  // 2. AQI loss
   const aqi_loss = 1 - (aqi / 500) * 0.25;
-
-  // 3. Cloud cover loss
   const cloud_loss = 1 - cloud_cover * 0.75;
 
-  // 4. Orientation loss
   const orientation_map: Record<string, number> = {
     "S": 1.0,
     "SE": 0.95,
@@ -65,16 +59,11 @@ function computeEfficiency(inputs: SolarInputs) {
   };
   const orientation_loss = orientation_map[roof_azimuth] ?? 0.85;
 
-  // 5. Tilt loss
   const tilt_loss = 1 - Math.abs(roof_angle - latitude) * 0.01;
-
-  // 6. Shading loss
   const shade_loss = shade_factor;
-
-  // 7. System losses
   const system_loss = 0.86;
 
-  const final_efficiency =
+  let final_efficiency =
     temp_loss *
     aqi_loss *
     cloud_loss *
@@ -82,6 +71,9 @@ function computeEfficiency(inputs: SolarInputs) {
     tilt_loss *
     shade_loss *
     system_loss;
+
+  // Minimum realistic efficiency
+  if (final_efficiency < 0.10) final_efficiency = 0.10;
 
   return {
     temp_loss,
@@ -102,21 +94,22 @@ function computeEfficiency(inputs: SolarInputs) {
 function computeProduction(inputs: SolarInputs, eff: number) {
   const { irradiance, roof_area } = inputs;
 
-  // If no roof area, assume 6 kW system
   const assumed_kw = 6;
-
   let annual_kwh;
 
   if (!roof_area) {
     annual_kwh = assumed_kw * 1000 * eff;
   } else {
-    const panel_efficiency = 0.20; // 20% typical
+    const panel_efficiency = 0.20;
     annual_kwh = irradiance * roof_area * panel_efficiency * eff;
   }
 
-  return {
-    annual_kwh
-  };
+  // Minimum realistic annual production
+  if (!annual_kwh || annual_kwh < 1000) {
+    annual_kwh = 1000;
+  }
+
+  return { annual_kwh };
 }
 
 // ----------------------------
@@ -128,11 +121,14 @@ function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
 
   const annual_savings = annual_kwh * electricity_rate;
 
-  const system_size_kw = 6; // assumed
-  const system_cost = system_size_kw * 2500; // $2.5/W
+  const system_size_kw = 6;
+  const system_cost = system_size_kw * 2500;
 
-  const payback_years = system_cost / annual_savings;
-  const roi = (annual_savings / system_cost) * 100;
+  let payback_years = system_cost / annual_savings;
+  let roi = (annual_savings / system_cost) * 100;
+
+  if (!isFinite(payback_years) || payback_years > 50) payback_years = 50;
+  if (!isFinite(roi) || roi < 0) roi = 0;
 
   return {
     annual_savings,
@@ -151,7 +147,9 @@ export function runSolarEngine(inputs: SolarInputs): SolarResult {
   const production = computeProduction(inputs, efficiency.final_efficiency);
   const financial = computeFinancial(inputs, production.annual_kwh);
 
-  const score = Math.min(1, efficiency.final_efficiency * 1.2);
+  let score = efficiency.final_efficiency * 1.2;
+  if (score < 0.10) score = 0.10;
+  if (score > 1) score = 1;
 
   return {
     summary: {

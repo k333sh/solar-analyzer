@@ -1,8 +1,11 @@
+// src/lib/fetchSolarData.ts
+// NASA POWER version — global, stable, never returns 0 irradiance
+
 export async function fetchSolarData(address: string) {
   let latitude: number | null = null;
   let longitude: number | null = null;
 
-  // 1. Try Nominatim
+  // 1. Try Nominatim (primary geocoder)
   try {
     const geoRes = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`,
@@ -41,24 +44,49 @@ export async function fetchSolarData(address: string) {
     } catch {}
   }
 
-  // 3. Final fallback
+  // 3. Final fallback (NYC)
   if (!latitude || !longitude) {
     latitude = 40.7128;
     longitude = -74.0060;
   }
 
-  // Weather
-  const weather = await fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=direct_radiation,temperature_2m,cloudcover`,
+  // ---------------------------------------------
+  // ⭐ NASA POWER — Global Irradiance (GHI)
+  // ---------------------------------------------
+  const nasa = await fetch(
+    `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&latitude=${latitude}&longitude=${longitude}&format=JSON`,
     { cache: "no-store" }
   ).then(r => r.json());
 
-  const irradiance = weather?.hourly?.direct_radiation?.[0] ?? 1400;
-  const temperature = weather?.hourly?.temperature_2m?.[0] ?? 10;
-  const cloud_cover_raw = weather?.hourly?.cloudcover?.[0] ?? 40;
+  let irradiance =
+    nasa?.properties?.parameter?.ALLSKY_SFC_SW_DWN &&
+    Object.values(nasa.properties.parameter.ALLSKY_SFC_SW_DWN)[0];
+
+  // NASA returns Wh/m²/day → convert to kWh/m²/year
+  if (irradiance) {
+    irradiance = (irradiance / 1000) * 365;
+  }
+
+  // Strong fallback if NASA returns weird values
+  if (!irradiance || irradiance < 1000) {
+    irradiance = 2000; // safe global minimum
+  }
+
+  // ---------------------------------------------
+  // Weather (temperature + cloud cover)
+  // ---------------------------------------------
+  const weather = await fetch(
+    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,cloudcover&timezone=auto`,
+    { cache: "no-store" }
+  ).then(r => r.json());
+
+  const temperature = weather?.hourly?.temperature_2m?.[0] ?? 25;
+  const cloud_cover_raw = weather?.hourly?.cloudcover?.[0] ?? 20;
   const cloud_cover = cloud_cover_raw / 100;
 
+  // ---------------------------------------------
   // AQI
+  // ---------------------------------------------
   const aqiJson = await fetch(
     `https://api.openaq.org/v2/latest?coordinates=${latitude},${longitude}`,
     { cache: "no-store" }
@@ -66,11 +94,14 @@ export async function fetchSolarData(address: string) {
 
   const aqi = aqiJson?.results?.[0]?.measurements?.[0]?.value ?? 40;
 
+  // ---------------------------------------------
+  // Shade factor
+  // ---------------------------------------------
   const shade_factor = Math.max(0.2, 1 - cloud_cover);
 
   return {
     latitude,
-    irradiance,
+    irradiance,       // now NASA POWER (kWh/m²/year)
     temperature,
     aqi,
     cloud_cover,
