@@ -18,7 +18,6 @@ export async function analyzeAndStore(formData: FormData) {
       : null;
     const monthly_bill = Number(formData.get("monthly_bill"));
 
-    // ALWAYS returns data now
     const env = await fetchSolarData(address);
 
     const result = runSolarEngine({
