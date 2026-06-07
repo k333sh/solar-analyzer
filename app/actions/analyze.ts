@@ -2,7 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { runSolarEngine } from "@/lib/solarEngine";
-import { fetchSolarData } from "@/lib/fetchSolarData";
+import { fetchSolarData } from "@/src/lib/fetchSolarData";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
