@@ -37,19 +37,21 @@ export async function analyzeAndStore(formData: FormData) {
   });
 
   // Store in Supabase
+  console.log("SERVER ACTION STARTED");
+
   const { data, error } = await supabase
     .from("analyses")
-    .insert({
-      address,
-      roof_angle,
-      roof_area,
-      monthly_bill,
-      result,
-    })
+    .insert({ result })
     .select("id")
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("SUPABASE INSERT ERROR:", error);
+    throw error;
+  }
+
+  console.log("INSERTED ROW WITH ID:", data.id);
+
 
   return data.id;
 }
