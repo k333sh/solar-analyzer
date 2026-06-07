@@ -29,7 +29,7 @@ export type SolarResult = {
 };
 
 // ----------------------------
-// EFFICIENCY ENGINE (patched)
+// EFFICIENCY ENGINE (corrected)
 // ----------------------------
 
 function computeEfficiency(inputs: SolarInputs) {
@@ -43,12 +43,16 @@ function computeEfficiency(inputs: SolarInputs) {
     latitude
   } = inputs;
 
+  // Temperature loss (mild)
   const temp_loss = 1 - Math.max(0, (temperature - 25) * 0.003);
+
+  // AQI loss (mild)
   const aqi_loss = 1 - (aqi / 500) * 0.15;
 
-  // Softer cloud loss
+  // Cloud loss (softened)
   const cloud_loss = 1 - cloud_cover * 0.40;
 
+  // Orientation
   const orientation_map: Record<string, number> = {
     "S": 1.0,
     "SE": 0.97,
@@ -61,13 +65,16 @@ function computeEfficiency(inputs: SolarInputs) {
   };
   const orientation_loss = orientation_map[roof_azimuth] ?? 0.90;
 
+  // Tilt loss (softened)
   const tilt_loss = 1 - Math.abs(roof_angle - latitude) * 0.005;
 
-  // Softer shade loss
+  // Shade loss (softened)
   const shade_loss = 0.5 + (shade_factor * 0.5);
 
+  // System loss
   const system_loss = 0.90;
 
+  // Multiply all losses
   let final_efficiency =
     temp_loss *
     aqi_loss *
@@ -77,9 +84,10 @@ function computeEfficiency(inputs: SolarInputs) {
     shade_loss *
     system_loss;
 
-  // Clamp to realistic range
-  if (final_efficiency < 0.15) final_efficiency = 0.15;
-  if (final_efficiency > 0.25) final_efficiency = 0.25;
+  // LOW-END CLAMP ONLY
+  if (final_efficiency < 0.14) final_efficiency = 0.14;
+
+  // NO HIGH-END CLAMP — Sahara can go above 0.25 now
 
   return {
     temp_loss,
@@ -110,6 +118,7 @@ function computeProduction(inputs: SolarInputs, eff: number) {
     annual_kwh = irradiance * roof_area * panel_efficiency * eff;
   }
 
+  // Minimum realistic production
   if (!annual_kwh || annual_kwh < 2000) {
     annual_kwh = 2000;
   }
@@ -118,7 +127,7 @@ function computeProduction(inputs: SolarInputs, eff: number) {
 }
 
 // ----------------------------
-// FINANCIAL ENGINE (patched)
+// FINANCIAL ENGINE (corrected)
 // ----------------------------
 
 function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
@@ -136,7 +145,7 @@ function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
   if (!isFinite(payback_years) || payback_years > 50) payback_years = 50;
   if (!isFinite(roi) || roi < 0) roi = 0;
 
-  // NEW: financial pressure (higher bill = higher incentive)
+  // FINANCIAL PRESSURE MODEL (correct direction)
   const financial_pressure = annual_bill / system_cost;
   const financial_quality = Math.min(1, financial_pressure);
 
@@ -159,7 +168,7 @@ export function runSolarEngine(inputs: SolarInputs): SolarResult {
   const production = computeProduction(inputs, efficiency.final_efficiency);
   const financial = computeFinancial(inputs, production.annual_kwh);
 
-  const solar_quality = efficiency.final_efficiency; // 0.15–0.25
+  const solar_quality = efficiency.final_efficiency; // now free to go above 0.25
   const financial_quality = financial.financial_quality; // 0–1
 
   const score = Math.min(
