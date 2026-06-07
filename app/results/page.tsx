@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import "./results.css";
-import { getResult } from "@/lib/resultStore";
+import { createClient } from "@supabase/supabase-js";
 import LineGraph from "@/components/LineGraph";
 import BackButton from "@/components/BackButton";
 
@@ -23,10 +23,28 @@ export default async function ResultsPage(props: {
 
     if (!id) return <div className="page">No result id provided.</div>;
 
-    const data = getResult(id);
-    if (!data) return <div className="page">Result not found or expired.</div>;
+    // Supabase client
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
-    const { summary, breakdown } = data;
+    // Fetch the stored analysis
+    const { data, error } = await supabase
+        .from("analyses")
+        .select("result")
+        .eq("id", id)
+        .single();
+
+    if (error || !data) {
+        return <div className="page">Result not found or expired.</div>;
+    }
+
+    // Extract result safely
+    const result = data.result;
+    const summary = result.summary;
+    const breakdown = result.breakdown;
+
     const scorePct = Math.round(summary.score * 100);
 
     // Fake 3-year production curve for graph
@@ -91,6 +109,7 @@ export default async function ResultsPage(props: {
                 <p><strong>ROI:</strong> {breakdown.financial.roi.toFixed(1)}%</p>
                 <p><strong>Payback Years:</strong> {breakdown.financial.payback_years.toFixed(1)}</p>
             </div>
+
             <div className="btn-row">
                 <BackButton />
             </div>
