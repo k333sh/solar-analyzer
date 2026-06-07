@@ -29,6 +29,10 @@ export default function HomePage() {
   async function handleAnalyze(formData: FormData) {
     startTransition(async () => {
       const id = await analyzeAndStore(formData);
+
+      // Fix Supabase replication race condition
+      await new Promise((r) => setTimeout(r, 150));
+
       router.push(`/results?id=${id}`);
     });
   }
@@ -47,7 +51,6 @@ export default function HomePage() {
         <button className="btn-prefill" onClick={prefill}>
           Prefill Example
         </button>
-
       </section>
 
       {/* RIGHT INPUT PANEL */}
@@ -125,9 +128,6 @@ export default function HomePage() {
         © 2026 Solar Analyzer — Designed with precision.
       </footer>
 
-
     </div>
-
-
   );
 }
