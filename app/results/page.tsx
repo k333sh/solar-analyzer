@@ -5,6 +5,13 @@ import { createClient } from "@supabase/supabase-js";
 import LineGraph from "@/components/LineGraph";
 import BackButton from "@/components/BackButton";
 
+// Safe formatter
+function fmt(value: any, digits = 2) {
+    return typeof value === "number" && !isNaN(value)
+        ? value.toFixed(digits)
+        : "—";
+}
+
 // Score explanation helper
 function explainScore(score: number) {
     const pct = score * 100;
@@ -45,14 +52,11 @@ export default async function ResultsPage(props: {
     const summary = result.summary;
     const breakdown = result.breakdown;
 
-    const scorePct = Math.round(summary.score * 100);
+    const scorePct = Math.round((summary?.score ?? 0) * 100);
 
     // Fake 3-year production curve for graph
-    const productionCurve = [
-        summary.annual_kwh,
-        summary.annual_kwh * 1.01,
-        summary.annual_kwh * 1.02,
-    ];
+    const annual = summary?.annual_kwh ?? 0;
+    const productionCurve = [annual, annual * 1.01, annual * 1.02];
 
     return (
         <div className="page">
@@ -67,10 +71,10 @@ export default async function ResultsPage(props: {
                     <div className="score-fill" style={{ width: `${scorePct}%` }}></div>
                 </div>
 
-                <p className="explain">{explainScore(summary.score)}</p>
+                <p className="explain">{explainScore(summary?.score ?? 0)}</p>
 
                 <div className="timeline">
-                    {[...Array(Math.round(summary.payback_years)).keys()].map((year) => (
+                    {[...Array(Math.round(summary?.payback_years ?? 0)).keys()].map((year) => (
                         <div key={year} className="timeline-year"></div>
                     ))}
                 </div>
@@ -86,28 +90,28 @@ export default async function ResultsPage(props: {
             {/* SUMMARY CARD */}
             <div className="card">
                 <h2 className="card-title">Summary</h2>
-                <p><strong>Annual Production:</strong> {summary.annual_kwh.toFixed(0)} kWh</p>
-                <p><strong>Payback Period:</strong> {summary.payback_years.toFixed(1)} years</p>
+                <p><strong>Annual Production:</strong> {fmt(summary?.annual_kwh, 0)} kWh</p>
+                <p><strong>Payback Period:</strong> {fmt(summary?.payback_years, 1)} years</p>
             </div>
 
             {/* EFFICIENCY CARD */}
             <div className="card">
                 <h2 className="card-title">Efficiency Breakdown</h2>
-                <p><strong>Temperature Loss:</strong> {breakdown.efficiency.temp_loss.toFixed(3)}</p>
-                <p><strong>AQI Loss:</strong> {breakdown.efficiency.aqi_loss.toFixed(3)}</p>
-                <p><strong>Cloud Loss:</strong> {breakdown.efficiency.cloud_loss.toFixed(3)}</p>
-                <p><strong>Tilt Loss:</strong> {breakdown.efficiency.tilt_loss.toFixed(3)}</p>
-                <p><strong>Shade Loss:</strong> {breakdown.efficiency.shade_loss.toFixed(3)}</p>
-                <p><strong>System Loss:</strong> {breakdown.efficiency.system_loss.toFixed(3)}</p>
-                <p><strong>Final Efficiency:</strong> {breakdown.efficiency.final_efficiency.toFixed(3)}</p>
+                <p><strong>Temperature Loss:</strong> {fmt(breakdown?.efficiency?.temp_loss, 3)}</p>
+                <p><strong>AQI Loss:</strong> {fmt(breakdown?.efficiency?.aqi_loss, 3)}</p>
+                <p><strong>Cloud Loss:</strong> {fmt(breakdown?.efficiency?.cloud_loss, 3)}</p>
+                <p><strong>Tilt Loss:</strong> {fmt(breakdown?.efficiency?.tilt_loss, 3)}</p>
+                <p><strong>Shade Loss:</strong> {fmt(breakdown?.efficiency?.shade_loss, 3)}</p>
+                <p><strong>System Loss:</strong> {fmt(breakdown?.efficiency?.system_loss, 3)}</p>
+                <p><strong>Final Efficiency:</strong> {fmt(breakdown?.efficiency?.final_efficiency, 3)}</p>
             </div>
 
             {/* FINANCIAL CARD */}
             <div className="card">
                 <h2 className="card-title">Financial</h2>
-                <p><strong>Annual Savings:</strong> ${breakdown.financial.annual_savings.toFixed(2)}</p>
-                <p><strong>ROI:</strong> {breakdown.financial.roi.toFixed(1)}%</p>
-                <p><strong>Payback Years:</strong> {breakdown.financial.payback_years.toFixed(1)}</p>
+                <p><strong>Annual Savings:</strong> ${fmt(breakdown?.financial?.annual_savings, 2)}</p>
+                <p><strong>ROI:</strong> {fmt(breakdown?.financial?.roi, 1)}%</p>
+                <p><strong>Payback Years:</strong> {fmt(breakdown?.financial?.payback_years, 1)}</p>
             </div>
 
             <div className="btn-row">
