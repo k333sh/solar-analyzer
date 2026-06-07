@@ -54,7 +54,7 @@ export default function HomePage() {
         <form action={handleAnalyze} className="input-grid">
 
           <div className="input-card">
-            <img src="/icons/house.png" className="input-icon" />
+            <img src="/icons/House.png" className="input-icon" />
             <label className="input-card-label">Address</label>
             <input
               name="address"
