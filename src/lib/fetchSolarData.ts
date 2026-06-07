@@ -1,33 +1,14 @@
 export async function fetchSolarData(address: string) {
-  // 1. Geocode using Nominatim (correct headers)
-  const geoRes = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(address)}`,
-    {
-      method: "GET",
-      headers: {
-        "User-Agent": "SolarAnalyzer/1.0 (oyewusiiteoluwa@gmail.com)",
-        "Referer": "https://solar-analyzer.vercel.app",
-      },
-      cache: "no-store",
-    }
-  );
+  // 1. Try Nominatim
+  const coords = await tryNominatim(address)
+    || await tryOpenMeteo(address)
+    || await tryPhoton(address);
 
-  // Nominatim sometimes returns HTML on rate-limit → detect it
-  const text = await geoRes.text();
-
-  // If response starts with "<" it's HTML → Access Denied
-  if (text.trim().startsWith("<")) {
-    throw new Error("Nominatim blocked the request (rate limit or missing headers)");
+  if (!coords) {
+    throw new Error("Could not geocode address after multiple attempts.");
   }
 
-  const geo = JSON.parse(text);
-
-  if (!geo || geo.length === 0) {
-    throw new Error("Could not geocode address");
-  }
-
-  const latitude = Number(geo[0].lat);
-  const longitude = Number(geo[0].lon);
+  const { latitude, longitude } = coords;
 
   // 2. Weather + irradiance
   const weatherRes = await fetch(
@@ -48,15 +29,10 @@ export async function fetchSolarData(address: string) {
   );
   const aqiJson = await aqiRes.json();
 
-  const aqi =
-    aqiJson?.results?.[0]?.measurements?.[0]?.value ?? 40;
+  const aqi = aqiJson?.results?.[0]?.measurements?.[0]?.value ?? 40;
 
   // 4. Shade factor
   const shade_factor = Math.max(0.2, 1 - cloud_cover);
-
-  // 5. Defaults
-  const roof_azimuth = "S";
-  const electricity_rate = 0.12;
 
   return {
     latitude,
@@ -65,7 +41,76 @@ export async function fetchSolarData(address: string) {
     aqi,
     cloud_cover,
     shade_factor,
-    roof_azimuth,
-    electricity_rate,
+    roof_azimuth: "S",
+    electricity_rate: 0.12,
   };
+}
+
+// -------------------------------
+// GEOCODING HELPERS
+// -------------------------------
+
+async function tryNominatim(address: string) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`,
+      {
+        headers: {
+          "User-Agent": "SolarAnalyzer/1.0",
+        },
+        cache: "no-store",
+      }
+    );
+
+    const text = await res.text();
+    if (text.trim().startsWith("<")) return null;
+
+    const json = JSON.parse(text);
+    if (!json?.length) return null;
+
+    return {
+      latitude: Number(json[0].lat),
+      longitude: Number(json[0].lon),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function tryOpenMeteo(address: string) {
+  try {
+    const res = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(address)}&count=1`,
+      { cache: "no-store" }
+    );
+    const json = await res.json();
+
+    if (!json?.results?.length) return null;
+
+    return {
+      latitude: json.results[0].latitude,
+      longitude: json.results[0].longitude,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function tryPhoton(address: string) {
+  try {
+    const res = await fetch(
+      `https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=1`,
+      { cache: "no-store" }
+    );
+    const json = await res.json();
+
+    if (!json?.features?.length) return null;
+
+    return {
+      latitude: json.features[0].geometry.coordinates[1],
+      longitude: json.features[0].geometry.coordinates[0],
+    };
+  } catch {
+    return null;
+  }
 }
