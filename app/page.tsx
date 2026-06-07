@@ -27,16 +27,28 @@ export default function HomePage() {
 
   // SUBMIT HANDLER (PATCHED)
   async function handleAnalyze(formData: FormData) {
-    startTransition(async () => {
-      const id = await analyzeAndStore(formData);
+  startTransition(async () => {
+    const id = await analyzeAndStore(formData);
 
-      // ⭐ CRITICAL FIX: Prevent Supabase replication race condition
-      // Lagos, Nairobi, Johannesburg, São Paulo, Mumbai, etc. all need this.
-      await new Promise((resolve) => setTimeout(resolve, 250));
+    // ⭐ POLL SUPABASE UNTIL THE ROW EXISTS (bulletproof)
+    let attempts = 0;
+    let exists = false;
 
-      router.push(`/results?id=${id}`);
-    });
-  }
+    while (attempts < 8 && !exists) {
+      const res = await fetch(`/api/check?id=${id}`);
+      const json = await res.json();
+      if (json.exists) {
+        exists = true;
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 150));
+      attempts++;
+    }
+
+    router.push(`/results?id=${id}`);
+  });
+}
+
 
   return (
     <div className="home-layout">
