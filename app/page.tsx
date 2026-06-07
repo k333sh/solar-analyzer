@@ -25,13 +25,14 @@ export default function HomePage() {
     setMonthlyBill("120");
   }
 
-  // SUBMIT HANDLER
+  // SUBMIT HANDLER (PATCHED)
   async function handleAnalyze(formData: FormData) {
     startTransition(async () => {
       const id = await analyzeAndStore(formData);
 
-      // Fix Supabase replication race condition
-      await new Promise((r) => setTimeout(r, 150));
+      // ⭐ CRITICAL FIX: Prevent Supabase replication race condition
+      // Lagos, Nairobi, Johannesburg, São Paulo, Mumbai, etc. all need this.
+      await new Promise((resolve) => setTimeout(resolve, 250));
 
       router.push(`/results?id=${id}`);
     });
