@@ -23,10 +23,13 @@ function explainScore(score: number) {
     return "Very poor solar potential. Solar is unlikely to be cost‑effective here.";
 }
 
-export default async function ResultsPage(props: {
-    searchParams: Promise<{ id?: string }>;
+export default async function ResultsPage({
+    searchParams,
+}: {
+    searchParams: { id?: string };
 }) {
-    const { id } = await props.searchParams;
+    const id = searchParams.id;
+
 
     if (!id) return <div className="page">No result id provided.</div>;
 
