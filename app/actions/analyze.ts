@@ -1,15 +1,9 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
 import { runSolarEngine } from "@/lib/solarEngine";
 import { fetchSolarData } from "@/src/lib/fetchSolarData";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export async function analyzeAndStore(formData: FormData) {
+export async function analyzeAndReturn(formData: FormData) {
   try {
     const address = formData.get("address") as string;
     const roof_angle = Number(formData.get("roof_angle"));
@@ -35,18 +29,7 @@ export async function analyzeAndStore(formData: FormData) {
       electricity_rate: env.electricity_rate,
     });
 
-    const { data, error } = await supabase
-      .from("analyses")
-      .insert({ result })
-      .select("id")
-      .single();
-
-    if (error) {
-      console.error("SUPABASE INSERT ERROR:", error);
-      return null;
-    }
-
-    return data.id;
+    return result;
 
   } catch (err) {
     console.error("SERVER ACTION ERROR:", err);

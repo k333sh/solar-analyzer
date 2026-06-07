@@ -2,6 +2,7 @@ export async function fetchSolarData(address: string) {
   let latitude: number | null = null;
   let longitude: number | null = null;
 
+  // 1. Try Nominatim
   try {
     const geoRes = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`,
@@ -25,6 +26,7 @@ export async function fetchSolarData(address: string) {
     }
   } catch {}
 
+  // 2. Fallback: Open-Meteo geocoder
   if (!latitude || !longitude) {
     try {
       const geo2 = await fetch(
@@ -39,11 +41,13 @@ export async function fetchSolarData(address: string) {
     } catch {}
   }
 
+  // 3. Final fallback
   if (!latitude || !longitude) {
     latitude = 40.7128;
     longitude = -74.0060;
   }
 
+  // Weather
   const weather = await fetch(
     `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=direct_radiation,temperature_2m,cloudcover`,
     { cache: "no-store" }
@@ -54,6 +58,7 @@ export async function fetchSolarData(address: string) {
   const cloud_cover_raw = weather?.hourly?.cloudcover?.[0] ?? 40;
   const cloud_cover = cloud_cover_raw / 100;
 
+  // AQI
   const aqiJson = await fetch(
     `https://api.openaq.org/v2/latest?coordinates=${latitude},${longitude}`,
     { cache: "no-store" }
