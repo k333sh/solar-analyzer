@@ -1,5 +1,4 @@
 export async function fetchSolarData(address: string) {
-  // 1. Geocode using Nominatim (correct headers)
   const geoRes = await fetch(
     `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(address)}`,
     {
@@ -12,10 +11,8 @@ export async function fetchSolarData(address: string) {
     }
   );
 
-  // Nominatim sometimes returns HTML on rate-limit → detect it
   const text = await geoRes.text();
 
-  // If response starts with "<" it's HTML → Access Denied
   if (text.trim().startsWith("<")) {
     throw new Error("Nominatim blocked the request (rate limit or missing headers)");
   }
@@ -29,7 +26,6 @@ export async function fetchSolarData(address: string) {
   const latitude = Number(geo[0].lat);
   const longitude = Number(geo[0].lon);
 
-  // 2. Weather + irradiance
   const weatherRes = await fetch(
     `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=direct_radiation,temperature_2m,cloudcover`,
     { cache: "no-store" }
@@ -41,22 +37,15 @@ export async function fetchSolarData(address: string) {
   const cloud_cover_raw = weather?.hourly?.cloudcover?.[0] ?? 40;
   const cloud_cover = cloud_cover_raw / 100;
 
-  // 3. AQI
   const aqiRes = await fetch(
     `https://api.openaq.org/v2/latest?coordinates=${latitude},${longitude}`,
     { cache: "no-store" }
   );
   const aqiJson = await aqiRes.json();
 
-  const aqi =
-    aqiJson?.results?.[0]?.measurements?.[0]?.value ?? 40;
+  const aqi = aqiJson?.results?.[0]?.measurements?.[0]?.value ?? 40;
 
-  // 4. Shade factor
   const shade_factor = Math.max(0.2, 1 - cloud_cover);
-
-  // 5. Defaults
-  const roof_azimuth = "S";
-  const electricity_rate = 0.12;
 
   return {
     latitude,
@@ -65,7 +54,7 @@ export async function fetchSolarData(address: string) {
     aqi,
     cloud_cover,
     shade_factor,
-    roof_azimuth,
-    electricity_rate,
+    roof_azimuth: "S",
+    electricity_rate: 0.12,
   };
 }

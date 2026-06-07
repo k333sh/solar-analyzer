@@ -11,8 +11,6 @@ const supabase = createClient(
 
 export async function analyzeAndStore(formData: FormData) {
   try {
-    console.log("SERVER ACTION STARTED");
-
     const address = formData.get("address") as string;
     const roof_angle = Number(formData.get("roof_angle"));
     const roof_area = formData.get("roof_area")
@@ -20,13 +18,8 @@ export async function analyzeAndStore(formData: FormData) {
       : null;
     const monthly_bill = Number(formData.get("monthly_bill"));
 
-    console.log("INPUTS:", { address, roof_angle, roof_area, monthly_bill });
-
-    // Fetch environmental + location data
     const env = await fetchSolarData(address);
-    console.log("FETCHED ENV DATA:", env);
 
-    // Run the full engine with ALL required fields
     const result = runSolarEngine({
       address,
       roof_area,
@@ -42,28 +35,17 @@ export async function analyzeAndStore(formData: FormData) {
       electricity_rate: env.electricity_rate,
     });
 
-    console.log("ENGINE RESULT:", result);
-
-    // Store in Supabase
-    console.log("INSERTING INTO SUPABASE…");
-
     const { data, error } = await supabase
       .from("analyses")
       .insert({ result })
       .select("id")
       .single();
 
-    if (error) {
-      console.error("SUPABASE INSERT ERROR:", error);
-      throw error;
-    }
-
-    console.log("INSERTED ROW WITH ID:", data.id);
+    if (error) throw error;
 
     return data.id;
 
   } catch (err) {
-    console.error("SERVER ACTION ERROR:", err);
     throw err;
   }
 }
