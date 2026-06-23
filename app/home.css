@@ -53,54 +53,40 @@
   background: var(--bg2);
   border-radius: 18px;
   border: 1px solid var(--line2);
-  padding: 40px 36px;
+  padding: 40px 36px 120px; /* extra bottom padding for semi-circle */
   position: relative;
   overflow: hidden;
   min-height: 650px;
   box-shadow: 0 22px 48px rgba(0,0,0,0.55);
 }
 
-.home-right::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
-  opacity: 0.6;
-  pointer-events: none;
-}
-
 /* SECTION TITLE */
 .section-title {
   font-family: "Fraunces", serif;
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   font-weight: 300;
   letter-spacing: -0.02em;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
   color: var(--txt);
 }
 
-/* INPUT GRID */
+/* VERTICAL STACK OF INPUT BLOCKS */
 .input-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 32px;
 }
 
-/* INPUT CARD */
+/* BIG VERTICAL INPUT BLOCKS */
 .input-card {
   background: var(--bg3);
   border-radius: var(--r);
   border: 1px solid var(--line2);
-  padding: 28px 24px;
+  padding: 32px 28px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-height: 180px;
+  gap: 18px;
+  min-height: 160px;
   box-shadow: 0 16px 36px rgba(0,0,0,0.55);
   opacity: 0;
   animation: fadeUp 0.5s ease forwards;
@@ -112,8 +98,8 @@
 .input-card:nth-child(4) { animation-delay: 0.2s; }
 
 .input-icon {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   opacity: 0.9;
 }
 
@@ -128,18 +114,18 @@
 /* INPUT FIELD */
 .input-card-control {
   padding: 18px 18px;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   min-height: 56px;
   border-radius: 10px;
 }
 
 /* RUN BUTTON */
 .btn-run {
-  grid-column: span 2;
-  margin-top: 12px;
+  margin-top: 20px;
   padding: 20px;
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   border-radius: 12px;
+  width: 100%;
 }
 
 /* PREFILL BUTTON */
@@ -149,18 +135,35 @@
   font-size: 1rem;
 }
 
+/* GOLD SEMI-CIRCLE FOOTER */
+.home-right::after {
+  content: "";
+  position: absolute;
+  bottom: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140%;
+  height: 260px;
+  background: radial-gradient(circle at center, rgba(245,166,35,0.35), rgba(245,166,35,0.05), transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+/* FOOTER TEXT */
+.footer {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  text-align: center;
+  color: var(--txt3);
+  font-size: 0.85rem;
+  z-index: 2;
+}
+
 /* RESPONSIVE */
 @media (max-width: 1000px) {
   .home-layout {
     flex-direction: column;
     padding: 32px 20px;
-  }
-
-  .input-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .btn-run {
-    grid-column: span 1;
   }
 }
