@@ -33,32 +33,36 @@ export default function HomePage() {
       }
 
       sessionStorage.setItem("solar_result", JSON.stringify(result));
-
       router.push("/results");
     });
   }
 
   return (
-    <div className="home-layout">
+    <div className="home-layout fadeUp">
+      {/* LEFT PANEL */}
       <section className="home-left">
-        <h1 className="home-title">SOLAR ANALYZER</h1>
+        <h1 className="home-title panel-title">SOLAR ANALYZER</h1>
+
         <p className="home-subtitle">
           <em>Solar intelligence calculator for efficiency and need assessment.</em>
         </p>
-        <button className="btn-prefill" onClick={prefill}>
+
+        <button className="btn-prefill btn-secondary" onClick={prefill}>
           Prefill Example
         </button>
       </section>
 
-      <section className="home-right">
+      {/* RIGHT PANEL */}
+      <section className="home-right card">
         <form action={handleAnalyze} className="input-grid">
 
-          <div className="input-card">
+          {/* ADDRESS */}
+          <div className="input-card card">
             <img src="/icons/House.png" className="input-icon" />
-            <label className="input-card-label">Address</label>
+            <label className="input-card-label mono-label">Address</label>
             <input
               name="address"
-              className="input-card-control"
+              className="input-card-control field-input"
               placeholder="Enter site address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
@@ -66,12 +70,13 @@ export default function HomePage() {
             />
           </div>
 
-          <div className="input-card">
+          {/* ROOF ANGLE */}
+          <div className="input-card card">
             <img src="/icons/protractor.png" className="input-icon" />
-            <label className="input-card-label">Roof Angle (°)</label>
+            <label className="input-card-label mono-label">Roof Angle (°)</label>
             <input
               name="roof_angle"
-              className="input-card-control"
+              className="input-card-control field-input"
               placeholder="e.g. 30"
               value={roofAngle}
               onChange={(e) => setRoofAngle(e.target.value)}
@@ -79,24 +84,26 @@ export default function HomePage() {
             />
           </div>
 
-          <div className="input-card">
+          {/* ROOF AREA */}
+          <div className="input-card card">
             <img src="/icons/triangle.png" className="input-icon" />
-            <label className="input-card-label">Roof Area (m²)</label>
+            <label className="input-card-label mono-label">Roof Area (m²)</label>
             <input
               name="roof_area"
-              className="input-card-control"
+              className="input-card-control field-input"
               placeholder="Optional"
               value={roofArea}
               onChange={(e) => setRoofArea(e.target.value)}
             />
           </div>
 
-          <div className="input-card">
+          {/* MONTHLY BILL */}
+          <div className="input-card card">
             <img src="/icons/cash.png" className="input-icon" />
-            <label className="input-card-label">Monthly Bill ($)</label>
+            <label className="input-card-label mono-label">Monthly Bill ($)</label>
             <input
               name="monthly_bill"
-              className="input-card-control"
+              className="input-card-control field-input"
               placeholder="e.g. 120"
               value={monthlyBill}
               onChange={(e) => setMonthlyBill(e.target.value)}
@@ -104,14 +111,15 @@ export default function HomePage() {
             />
           </div>
 
-          <button className="btn-run" type="submit" disabled={isPending}>
+          {/* SUBMIT */}
+          <button className="btn-run btn-primary" type="submit" disabled={isPending}>
             {isPending ? "Analyzing..." : "Run Analysis"}
           </button>
 
         </form>
       </section>
 
-      <footer className="footer">
+      <footer className="footer mono-label">
         © 2026 Solar Analyzer — Designed with precision.
       </footer>
     </div>

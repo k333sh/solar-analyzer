@@ -1,110 +1,90 @@
 .page {
-  padding: 40px 20px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 44px 24px 40px;
 }
 
+/* TITLE */
 .title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #F5A623;
+  font-family: "Fraunces", serif;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  font-size: 2.2rem;
   text-align: center;
-  margin-bottom: 30px;
-  text-shadow: 0 0 12px rgba(245,166,35,0.4);
+  color: var(--txt);
+  margin-bottom: 24px;
 }
 
+/* VERDICT / SCORE CARD */
 .card {
-  background: rgba(245,166,35,0.85);
-  color: #000;
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 20px;
-  backdrop-filter: blur(10px);
-  max-width: 650px;
-  margin-left: auto;
-  margin-right: auto;
-  border: 1px solid rgba(0,0,0,0.15);
+  background: var(--bg3);
+  border-radius: var(--r);
+  border: 1px solid var(--line2);
+  padding: 18px 18px 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.55);
 }
 
 .card-title {
-  font-size: 1.3rem;
-  margin-bottom: 12px;
-  font-weight: 700;
+  font-family: "Fraunces", serif;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: var(--txt2);
 }
 
+/* SCORE */
 .score {
-  font-size: 3rem;
-  font-weight: 800;
-  margin-bottom: 10px;
+  font-family: "Fraunces", serif;
+  font-weight: 300;
+  font-size: 2.6rem;
+  margin-bottom: 8px;
+  color: var(--txt);
 }
 
 .score-bar {
   width: 100%;
-  height: 12px;
-  background: rgba(0,0,0,0.2);
-  border-radius: 6px;
+  height: 10px;
+  background: var(--bg4);
+  border-radius: 999px;
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
 }
 
 .score-fill {
   height: 100%;
-  background: #000;
-  transition: width 0.6s ease;
+  background: var(--sol);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+  transition: width 0.8s cubic-bezier(.16,1,.3,1);
 }
 
+/* EXPLANATION */
 .explain {
-  color: #000;
   font-size: 0.9rem;
-  margin-top: 8px;
+  color: var(--txt2);
+  margin-top: 4px;
 }
 
-/* TIMELINE */
-.timeline {
-  display: flex;
-  gap: 6px;
-  margin-top: 16px;
+/* SUMMARY / BREAKDOWN TEXT */
+.card p {
+  font-size: 0.9rem;
+  color: var(--txt2);
+  margin-bottom: 4px;
 }
 
-.timeline-year {
-  width: 14px;
-  height: 14px;
-  background: #000;
-  border: 2px solid #F5A623;
-  border-radius: 4px;
-  opacity: 0.5;
+.card p strong {
+  color: var(--txt);
 }
 
-.timeline-year:last-child {
-  opacity: 1;
-  background: #F5A623;
-  border-color: #000;
-}
-
-.timeline-label {
-  margin-top: 6px;
-  font-size: 0.8rem;
-  color: #000;
-}
-
-/* BUTTONS */
-.btn {
-  background: #000;
-  color: #F5A623;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-weight: 600;
-  border: 1px solid #F5A623;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn:hover {
-  background: #F5A623;
-  color: #000;
-  box-shadow: 0 0 12px rgba(245,166,35,0.4);
-  transform: translateY(-2px);
-}
-
+/* BUTTON ROW */
 .btn-row {
   text-align: center;
-  margin-top: 30px;
+  margin-top: 26px;
+}
+
+/* BACK BUTTON (uses .btn from globals) */
+.btn-row .btn {
+  min-width: 160px;
 }
