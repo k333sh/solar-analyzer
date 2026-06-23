@@ -31,10 +31,10 @@
   --line: rgba(255,255,255,0.08);
   --line2: rgba(255,255,255,0.14);
 
-  --r: 10px;
+  --r: 12px;
 }
 
-/* APP BODY */
+/* BODY */
 .app-body {
   min-height: 100vh;
   background:
@@ -50,7 +50,7 @@
 .page {
   max-width: 960px;
   margin: 0 auto;
-  padding: 44px 24px 40px;
+  padding: 48px 28px;
 }
 
 /* TYPOGRAPHY */
@@ -59,7 +59,7 @@
   font-family: "Fraunces", serif;
   font-weight: 300;
   letter-spacing: -0.03em;
-  font-size: 2.4rem;
+  font-size: 2.6rem;
   color: var(--txt);
 }
 
@@ -67,8 +67,8 @@
 label,
 .sec-label {
   font-family: "DM Mono", monospace;
-  font-size: 0.76rem;
-  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--txt3);
 }
@@ -76,40 +76,42 @@ label,
 .metric-value {
   font-family: "Fraunces", serif;
   font-weight: 300;
-  font-size: 1.8rem;
+  font-size: 2rem;
 }
 
-/* CARDS / CONTAINERS */
+/* CARDS */
 .card {
   background: var(--bg3);
   border: 1px solid var(--line2);
   border-radius: var(--r);
-  padding: 18px 18px 16px;
+  padding: 26px 24px;
   box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+  min-height: 160px;
 }
 
 .card-title {
   font-family: "Fraunces", serif;
   font-weight: 300;
   letter-spacing: -0.02em;
-  font-size: 1.2rem;
-  margin-bottom: 12px;
+  font-size: 1.3rem;
+  margin-bottom: 16px;
   color: var(--txt2);
 }
 
-/* INPUT FIELDS */
+/* INPUTS */
 .field-input,
 .input-card-control,
 input,
 select {
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: 16px 16px;
+  border-radius: 10px;
   border: 1px solid var(--line2);
   background: #11120F;
   color: var(--txt);
-  font-family: "Instrument Sans", sans-serif;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  min-height: 54px;
 }
 
 .field-input::placeholder,
@@ -117,8 +119,6 @@ select {
   color: var(--txt3);
 }
 
-.field-input:focus,
-.input-card-control:focus,
 input:focus,
 select:focus {
   outline: none;
@@ -135,21 +135,22 @@ select:focus {
   background: var(--sol);
   color: #000;
   font-weight: 600;
-  font-size: 0.95rem;
-  padding: 12px 18px;
+  font-size: 1rem;
+  padding: 16px 20px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+  transition: 0.2s ease;
 }
 
 .btn-primary:hover,
 .btn-run:hover,
 .btn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow: 0 4px 20px var(--sol-glow);
   background: #11120F;
   color: var(--sol);
 }
 
+/* SECONDARY BUTTON */
 .btn-secondary,
 .btn-prefill {
   border-radius: var(--r);
@@ -157,34 +158,24 @@ select:focus {
   background: var(--bg3);
   color: var(--txt2);
   font-weight: 500;
-  font-size: 0.9rem;
-  padding: 10px 18px;
+  padding: 14px 20px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: 0.2s ease;
 }
 
 .btn-secondary:hover,
 .btn-prefill:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 18px rgba(0,0,0,0.6);
+  transform: translateY(-2px);
   border-color: var(--sol);
   color: var(--sol);
 }
 
-/* FOOTER */
-.footer {
-  text-align: center;
-  margin-top: 40px;
-  color: var(--txt3);
-  font-size: 0.8rem;
-}
-
-/* ANIMATIONS */
+/* ANIMATION */
 .fadeUp {
-  animation: fadeUp 0.4s ease;
+  animation: fadeUp 0.45s ease;
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
