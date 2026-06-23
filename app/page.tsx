@@ -39,89 +39,89 @@ export default function HomePage() {
 
   return (
     <div className="home-layout fadeUp">
-      {/* LEFT PANEL */}
-      <section className="home-left">
-        <h1 className="home-title panel-title">SOLAR ANALYZER</h1>
 
-        <p className="home-subtitle">
-          <em>Solar intelligence calculator for efficiency and need assessment.</em>
-        </p>
+      {/* TITLE */}
+      <h1 className="home-title">SOLAR ANALYZER</h1>
 
-        <button className="btn-prefill btn-secondary" onClick={prefill}>
-          Prefill Example
+      <p className="home-subtitle">
+        <em>Solar intelligence calculator for efficiency and need assessment.</em>
+      </p>
+
+      {/* PREFILL BUTTON */}
+      <button className="btn-prefill" onClick={prefill}>
+        Prefill Example
+      </button>
+
+      {/* INPUTS STACKED VERTICALLY */}
+      <form action={handleAnalyze} className="input-grid">
+
+        {/* ADDRESS */}
+        <div className="input-card">
+          <img src="/icons/House.png" className="input-icon" />
+          <label className="input-card-label">Address</label>
+          <input
+            name="address"
+            className="input-card-control"
+            placeholder="Enter site address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            required
+          />
+        </div>
+
+        {/* ROOF ANGLE */}
+        <div className="input-card">
+          <img src="/icons/protractor.png" className="input-icon" />
+          <label className="input-card-label">Roof Angle (°)</label>
+          <input
+            name="roof_angle"
+            className="input-card-control"
+            placeholder="e.g. 30"
+            value={roofAngle}
+            onChange={(e) => setRoofAngle(e.target.value)}
+            required
+          />
+        </div>
+
+        {/* ROOF AREA */}
+        <div className="input-card">
+          <img src="/icons/triangle.png" className="input-icon" />
+          <label className="input-card-label">Roof Area (m²)</label>
+          <input
+            name="roof_area"
+            className="input-card-control"
+            placeholder="Optional"
+            value={roofArea}
+            onChange={(e) => setRoofArea(e.target.value)}
+          />
+        </div>
+
+        {/* MONTHLY BILL */}
+        <div className="input-card">
+          <img src="/icons/cash.png" className="input-icon" />
+          <label className="input-card-label">Monthly Bill ($)</label>
+          <input
+            name="monthly_bill"
+            className="input-card-control"
+            placeholder="e.g. 120"
+            value={monthlyBill}
+            onChange={(e) => setMonthlyBill(e.target.value)}
+            required
+          />
+        </div>
+
+        {/* SUBMIT */}
+        <button className="btn-run" type="submit" disabled={isPending}>
+          {isPending ? "Analyzing..." : "Run Analysis"}
         </button>
-      </section>
 
-      {/* RIGHT PANEL */}
-      <section className="home-right card">
-        <form action={handleAnalyze} className="input-grid">
+      </form>
 
-          {/* ADDRESS */}
-          <div className="input-card card">
-            <img src="/icons/House.png" className="input-icon" />
-            <label className="input-card-label mono-label">Address</label>
-            <input
-              name="address"
-              className="input-card-control field-input"
-              placeholder="Enter site address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* ROOF ANGLE */}
-          <div className="input-card card">
-            <img src="/icons/protractor.png" className="input-icon" />
-            <label className="input-card-label mono-label">Roof Angle (°)</label>
-            <input
-              name="roof_angle"
-              className="input-card-control field-input"
-              placeholder="e.g. 30"
-              value={roofAngle}
-              onChange={(e) => setRoofAngle(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* ROOF AREA */}
-          <div className="input-card card">
-            <img src="/icons/triangle.png" className="input-icon" />
-            <label className="input-card-label mono-label">Roof Area (m²)</label>
-            <input
-              name="roof_area"
-              className="input-card-control field-input"
-              placeholder="Optional"
-              value={roofArea}
-              onChange={(e) => setRoofArea(e.target.value)}
-            />
-          </div>
-
-          {/* MONTHLY BILL */}
-          <div className="input-card card">
-            <img src="/icons/cash.png" className="input-icon" />
-            <label className="input-card-label mono-label">Monthly Bill ($)</label>
-            <input
-              name="monthly_bill"
-              className="input-card-control field-input"
-              placeholder="e.g. 120"
-              value={monthlyBill}
-              onChange={(e) => setMonthlyBill(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* SUBMIT */}
-          <button className="btn-run btn-primary" type="submit" disabled={isPending}>
-            {isPending ? "Analyzing..." : "Run Analysis"}
-          </button>
-
-        </form>
-      </section>
-
-      <footer className="footer mono-label">
+      {/* FOOTER */}
+      <footer className="footer">
         © 2026 Solar Analyzer — Designed with precision.
       </footer>
+
     </div>
   );
 }
