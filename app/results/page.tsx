@@ -40,7 +40,21 @@ export default function ResultsPage() {
 
   const scorePct = Math.round((summary?.score ?? 0) * 100);
   const annual = summary?.annual_kwh ?? 0;
-  const productionCurve = [annual, annual * 1.01, annual * 1.02];
+
+  // ⭐ NRCan-based monthly solar distribution
+  const monthlyFractions = [
+    0.02, 0.04, 0.07, 0.10, 0.12, 0.13,
+    0.13, 0.12, 0.10, 0.07, 0.04, 0.02
+  ];
+
+  // ⭐ Convert annual → monthly kWh
+  const productionCurve = monthlyFractions.map(f => f * annual);
+
+  // ⭐ Month labels
+  const monthLabels = [
+    "Jan","Feb","Mar","Apr","May","Jun",
+    "Jul","Aug","Sep","Oct","Nov","Dec"
+  ];
 
   return (
     <div className="page">
@@ -59,7 +73,7 @@ export default function ResultsPage() {
 
       <div className="card">
         <h2 className="card-title">Energy Production Over Time</h2>
-        <LineGraph dataPoints={productionCurve} />
+        <LineGraph dataPoints={productionCurve} labels={monthLabels} />
       </div>
 
       <div className="card">

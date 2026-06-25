@@ -1,43 +1,73 @@
 "use client";
 
-import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   LineElement,
   CategoryScale,
   LinearScale,
   PointElement,
+  Filler,
   Tooltip,
-  Legend,
+  Legend
 } from "chart.js";
+import { Line } from "react-chartjs-2";
 
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
+ChartJS.register(
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  Filler,
+  Tooltip,
+  Legend
+);
 
-export default function LineGraph({ dataPoints }: { dataPoints: number[] }) {
+export default function LineGraph({ dataPoints, labels }: any) {
   const data = {
-    labels: dataPoints.map((_, i) => `Year ${i + 1}`),
+    labels,
     datasets: [
       {
-        label: "Annual Energy Production (kWh)",
+        label: "Monthly Solar Production (kWh)",
         data: dataPoints,
-        borderColor: "#000",
-        backgroundColor: "rgba(0,0,0,0.3)",
-        borderWidth: 3,
-        tension: 0.3,
-        pointRadius: 4,
-        pointBackgroundColor: "#000",
-      },
-    ],
+        borderColor: "#FFD700", // ⭐ Yellow line
+        backgroundColor: "rgba(255, 215, 0, 0.25)", // ⭐ Yellow shading
+        fill: true,
+        tension: 0.35,
+        pointRadius: 3,
+        pointBackgroundColor: "#FFD700"
+      }
+    ]
   };
 
   const options = {
     responsive: true,
-    plugins: { legend: { display: false } },
+    maintainAspectRatio: false,
     scales: {
-      x: { ticks: { color: "#000" } },
-      y: { ticks: { color: "#000" } },
+      y: {
+        beginAtZero: true, // ⭐ Start at 0,0
+        ticks: { color: "#ffffff" },
+        grid: { color: "rgba(255,255,255,0.1)" }
+      },
+      x: {
+        ticks: { color: "#ffffff" },
+        grid: { color: "rgba(255,255,255,0.05)" }
+      }
     },
+    plugins: {
+      legend: {
+        labels: { color: "#ffffff" }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx: any) => `${ctx.raw.toFixed(0)} kWh`
+        }
+      }
+    }
   };
 
-  return <Line data={data} options={options} />;
+  return (
+    <div style={{ width: "100%", height: "300px" }}>
+      <Line data={data} options={options} />
+    </div>
+  );
 }
