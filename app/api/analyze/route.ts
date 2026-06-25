@@ -2,6 +2,19 @@
 import { NextResponse } from "next/server";
 import { runSolarEngine } from "@/lib/solarEngine";
 
+function estimateSpecificYield(lat: number, lon: number): number {
+  if (lat > 49 && lat < 51 && lon > -98 && lon < -96) return 1350; // Winnipeg
+  if (lat > 50 && lat < 52 && lon > -115 && lon < -113) return 1450; // Calgary
+  if (lat > 53 && lat < 54 && lon > -114 && lon < -112) return 1400; // Edmonton
+  if (lat > 43 && lat < 44 && lon > -80 && lon < -78) return 1250; // Toronto
+  if (lat > 45 && lat < 46 && lon > -76 && lon < -74) return 1300; // Ottawa
+  if (lat > 49 && lat < 50 && lon > -124 && lon < -122) return 1100; // Vancouver
+  if (lat > 45 && lat < 46 && lon > -74 && lon < -73) return 1200; // Montreal
+  if (lat > 44 && lat < 45 && lon > -64 && lon < -63) return 1250; // Halifax
+
+  return 1200; // default Canada average
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -108,20 +121,25 @@ export async function POST(req: Request) {
       estKwhPerMonth > 0 ? Number(monthly_bill) / estKwhPerMonth : 0.12;
 
     // 6) RUN SOLAR ENGINE
+    // 6) RUN SOLAR ENGINE
     const result = runSolarEngine({
       address,
-      roof_area: roof_area ? Number(roof_area) : null,
+      num_panels: Number(body.num_panels),
       roof_angle: Number(roof_angle),
       roof_azimuth: roof_azimuth || "S",
       monthly_bill: Number(monthly_bill),
+
       irradiance,
       temperature: avgTemp,
       aqi,
       cloud_cover: avgCloud,
-      shade_factor: 0.9, // TODO: real shading later
+      shade_factor: Math.max(0.2, 1 - avgCloud),
       latitude: lat,
-      electricity_rate
+      electricity_rate,
+
+      specific_yield: estimateSpecificYield(lat, lon),
     });
+
 
     return NextResponse.json({ ok: true, result });
   } catch (err) {
