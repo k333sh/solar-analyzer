@@ -2,18 +2,22 @@
 
 export type SolarInputs = {
   address: string;
-  roof_area?: number | null;
+  num_panels: number;          // NEW
   roof_angle: number;
   roof_azimuth: string;
   monthly_bill: number;
-  irradiance: number;     // kWh/m²/year
-  temperature: number;    // °C
-  aqi: number;            // Air Quality Index
-  cloud_cover: number;    // 0–1
-  shade_factor: number;   // 0–1
-  latitude: number;       // degrees
+
+  irradiance: number;          // still useful for display
+  temperature: number;
+  aqi: number;
+  cloud_cover: number;
+  shade_factor: number;
+  latitude: number;
   electricity_rate: number;
+
+  specific_yield: number;      // NEW (NRCan kWh/kWp/year)
 };
+
 
 export type SolarResult = {
   summary: {
@@ -106,38 +110,37 @@ function computeEfficiency(inputs: SolarInputs) {
 // ----------------------------
 
 function computeProduction(inputs: SolarInputs, eff: number) {
-  const { irradiance, roof_area } = inputs;
+  const { num_panels, specific_yield } = inputs;
 
-  const assumed_kw = 6;
-  let annual_kwh;
+  const panel_watt = 400; // assume 400W panels
+  const kwp = (num_panels * panel_watt) / 1000;
 
-  if (!roof_area) {
-    annual_kwh = assumed_kw * 1000 * eff;
-  } else {
-    const panel_efficiency = 0.20;
-    annual_kwh = irradiance * roof_area * panel_efficiency * eff;
-  }
+  // Base production from NRCan PV potential
+  let annual_kwh = kwp * specific_yield;
+
+  // Apply efficiency losses
+  annual_kwh = annual_kwh * eff;
 
   // Minimum realistic production
   if (!annual_kwh || annual_kwh < 2000) {
     annual_kwh = 2000;
   }
 
-  return { annual_kwh };
+  return { annual_kwh, kwp };
 }
+
 
 // ----------------------------
 // FINANCIAL ENGINE (corrected)
 // ----------------------------
 
-function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
+function computeFinancial(inputs: SolarInputs, annual_kwh: number, kwp: number) {
   const { electricity_rate, monthly_bill } = inputs;
 
   const annual_savings = annual_kwh * electricity_rate;
   const annual_bill = monthly_bill * 12;
 
-  const system_size_kw = 6;
-  const system_cost = system_size_kw * 2500;
+  const system_cost = kwp * 2500; // CAD average $2.5/W
 
   let payback_years = system_cost / annual_savings;
   let roi = (annual_savings / system_cost) * 100;
@@ -145,7 +148,6 @@ function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
   if (!isFinite(payback_years) || payback_years > 50) payback_years = 50;
   if (!isFinite(roi) || roi < 0) roi = 0;
 
-  // FINANCIAL PRESSURE MODEL (correct direction)
   const financial_pressure = annual_bill / system_cost;
   const financial_quality = Math.min(1, financial_pressure);
 
@@ -159,6 +161,7 @@ function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
   };
 }
 
+
 // ----------------------------
 // MASTER ENGINE (70% sunlight, 30% financial)
 // ----------------------------
@@ -166,10 +169,10 @@ function computeFinancial(inputs: SolarInputs, annual_kwh: number) {
 export function runSolarEngine(inputs: SolarInputs): SolarResult {
   const efficiency = computeEfficiency(inputs);
   const production = computeProduction(inputs, efficiency.final_efficiency);
-  const financial = computeFinancial(inputs, production.annual_kwh);
+  const financial = computeFinancial(inputs, production.annual_kwh, production.kwp);
 
-  const solar_quality = efficiency.final_efficiency; // now free to go above 0.25
-  const financial_quality = financial.financial_quality; // 0–1
+  const solar_quality = efficiency.final_efficiency;
+  const financial_quality = financial.financial_quality;
 
   const score = Math.min(
     1,
@@ -189,3 +192,4 @@ export function runSolarEngine(inputs: SolarInputs): SolarResult {
     }
   };
 }
+

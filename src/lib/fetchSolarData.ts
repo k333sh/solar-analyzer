@@ -1,11 +1,13 @@
 // src/lib/fetchSolarData.ts
-// NASA POWER version — global, stable, never returns 0 irradiance
+// NASA POWER + Open-Meteo + OpenAQ + NRCan specific yield lookup
 
 export async function fetchSolarData(address: string) {
   let latitude: number | null = null;
   let longitude: number | null = null;
 
-  // 1. Try Nominatim (primary geocoder)
+  // ---------------------------------------------
+  // 1. Nominatim Geocoding (Primary)
+  // ---------------------------------------------
   try {
     const geoRes = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`,
@@ -20,6 +22,7 @@ export async function fetchSolarData(address: string) {
 
     const text = await geoRes.text();
 
+    // Avoid HTML error pages
     if (!text.startsWith("<")) {
       const geo = JSON.parse(text);
       if (geo.length > 0) {
@@ -29,7 +32,9 @@ export async function fetchSolarData(address: string) {
     }
   } catch {}
 
-  // 2. Fallback: Open-Meteo geocoder
+  // ---------------------------------------------
+  // 2. Open-Meteo Geocoder (Fallback)
+  // ---------------------------------------------
   if (!latitude || !longitude) {
     try {
       const geo2 = await fetch(
@@ -44,7 +49,9 @@ export async function fetchSolarData(address: string) {
     } catch {}
   }
 
+  // ---------------------------------------------
   // 3. Final fallback (NYC)
+  // ---------------------------------------------
   if (!latitude || !longitude) {
     latitude = 40.7128;
     longitude = -74.0060;
@@ -95,18 +102,56 @@ export async function fetchSolarData(address: string) {
   const aqi = aqiJson?.results?.[0]?.measurements?.[0]?.value ?? 40;
 
   // ---------------------------------------------
-  // Shade factor
+  // Shade factor (simple model)
   // ---------------------------------------------
   const shade_factor = Math.max(0.2, 1 - cloud_cover);
 
+  // ---------------------------------------------
+  // ⭐ NRCan Specific Yield (kWh/kWp/year)
+  // ---------------------------------------------
+  const specific_yield = estimateSpecificYield(latitude, longitude);
+
   return {
     latitude,
-    irradiance,       // now NASA POWER (kWh/m²/year)
+    irradiance,       // NASA POWER (kWh/m²/year)
     temperature,
     aqi,
     cloud_cover,
     shade_factor,
     roof_azimuth: "S",
     electricity_rate: 0.12,
+    specific_yield,   // ⭐ NEW — required by your solar engine
   };
+}
+
+// --------------------------------------------------
+// ⭐ NRCan-Based Specific Yield Lookup
+// --------------------------------------------------
+function estimateSpecificYield(lat: number, lon: number): number {
+  // Winnipeg
+  if (lat > 49 && lat < 51 && lon > -98 && lon < -96) return 1350;
+
+  // Calgary
+  if (lat > 50 && lat < 52 && lon > -115 && lon < -113) return 1450;
+
+  // Edmonton
+  if (lat > 53 && lat < 54 && lon > -114 && lon < -112) return 1400;
+
+  // Toronto
+  if (lat > 43 && lat < 44 && lon > -80 && lon < -78) return 1250;
+
+  // Ottawa
+  if (lat > 45 && lat < 46 && lon > -76 && lon < -74) return 1300;
+
+  // Vancouver
+  if (lat > 49 && lat < 50 && lon > -124 && lon < -122) return 1100;
+
+  // Montreal
+  if (lat > 45 && lat < 46 && lon > -74 && lon < -73) return 1200;
+
+  // Halifax
+  if (lat > 44 && lat < 45 && lon > -64 && lon < -63) return 1250;
+
+  // Default Canadian average
+  return 1200;
 }

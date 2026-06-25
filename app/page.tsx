@@ -13,13 +13,14 @@ export default function HomePage() {
 
   const [address, setAddress] = useState("");
   const [roofAngle, setRoofAngle] = useState("");
-  const [roofArea, setRoofArea] = useState("");
   const [monthlyBill, setMonthlyBill] = useState("");
+  const [numPanels, setNumPanels] = useState("");
+
 
   function prefill() {
     setAddress("1600 Pennsylvania Ave NW, Washington, DC");
     setRoofAngle("30");
-    setRoofArea("80");
+    setNumPanels("5");
     setMonthlyBill("120");
   }
 
@@ -83,18 +84,21 @@ export default function HomePage() {
           />
         </div>
 
-        {/* ROOF AREA */}
+        {/* NUMBER OF PANELS */}
         <div className="input-card">
-          <img src="/icons/triangle.png" className="input-icon" />
-          <label className="input-card-label">Roof Area (m²)</label>
+          <img src="/icons/solar.png" className="input-icon" />
+          <label className="input-card-label">Number of Panels</label>
           <input
-            name="roof_area"
+            name="num_panels"
             className="input-card-control"
-            placeholder="Optional"
-            value={roofArea}
-            onChange={(e) => setRoofArea(e.target.value)}
+            placeholder="e.g. 12"
+            value={numPanels}
+            onChange={(e) => setNumPanels(e.target.value)}
+            required
           />
         </div>
+
+
 
         {/* MONTHLY BILL */}
         <div className="input-card">
